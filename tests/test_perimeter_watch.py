@@ -72,14 +72,14 @@ class TestRun(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as td:
             state = Path(td) / "s.json"
-            report, risks, errors, _secrets, _dispatched = cli.run(
+            report, risks, errors, _secrets, _buckets, _dispatched = cli.run(
                 {"domains": ["d.com"]}, state, enum_fn=enum, resolve_fn=resolve,
                 fetch_fn=lambda url: (0, ""))
             self.assertEqual(report["d.com"]["added"], ["a.d.com", "b.d.com"])
             self.assertEqual(report["d.com"]["newly_dangling"], [])
             self.assertEqual(errors, {})
             # second run: nothing new, state persisted
-            report2, _, _, _, _ = cli.run(
+            report2, _, _, _, _, _ = cli.run(
                 {"domains": ["d.com"]}, state, enum_fn=enum, resolve_fn=resolve,
                 fetch_fn=lambda url: (0, ""))
             self.assertEqual(report2["d.com"]["added"], [])

@@ -19,6 +19,15 @@ perimeter alerts without paying for an attack-surface platform.
 
     uvx perimeter-watch scan --config perimeter.yaml
 
+## Trend reports
+
+Add `"history": "history.jsonl"` to your watchlist and every run journals
+itself. Then:
+
+    python -m perimeter_watch --watchlist watchlist.json --trends trends.md
+
+renders asset growth, incident counts and per-week deltas as markdown.
+
 ## Quickstart
 
     python -m perimeter_watch --watchlist watchlist.json --state perimeter-state.json

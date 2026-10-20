@@ -23,3 +23,13 @@
 - CLI with CI-friendly exit codes (2 = takeover risk)
 - GitHub Actions workflow template — the free tier is the product
 - 11 offline tests; enumeration and resolution fully injectable
+
+## v0.3.0 — 2026-10-20
+
+- Exposed cloud-storage detection: S3, Azure Blob and GCS targets
+  derived from your own assets, probed with read-only anonymous
+  listing requests; exposures alert and exit with code 4.
+- Historical trend reports: every run appends to history.jsonl
+  (opt in via watchlist "history"); --trends renders asset growth,
+  incident counts and per-week deltas as markdown.
+- 8 new tests (27 total).

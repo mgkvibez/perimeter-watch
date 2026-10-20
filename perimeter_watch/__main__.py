@@ -2,6 +2,7 @@
 import argparse
 import datetime as dt
 import json
+from pathlib import Path
 import sys
 
 from .enum_sources import ct_subdomains
@@ -17,6 +18,8 @@ def run(watchlist, state_path, enum_fn=None, resolve_fn=None, fetch_fn=None):
 
     from .secrets import scan_all
     from .alerts import build_alert, should_alert, dispatch
+    from .buckets import scan_buckets
+    from .trends import append_history
 
     previous = load_state(state_path)
     current = {}
@@ -42,12 +45,19 @@ def run(watchlist, state_path, enum_fn=None, resolve_fn=None, fetch_fn=None):
         })
         secret_findings[domain] = scan_all(live_bases, fetch_fn=fetch_fn) if live_bases else {}
 
+    bucket_findings = {}
+    for domain, records in current.items():
+        found = scan_buckets(records, fetch=fetch_fn)
+        if found:
+            bucket_findings[domain] = found
+
     alert_payloads = {}
     for domain in current:
         alert = build_alert(domain,
                             findings=secret_findings.get(domain, {}),
                             risks=risks.get(domain, {}),
-                            changes=report.get(domain, {}))
+                            changes=report.get(domain, {}),
+                            buckets=bucket_findings.get(domain, []))
         if should_alert(alert):
             alert_payloads[domain] = alert
 
@@ -63,7 +73,20 @@ def run(watchlist, state_path, enum_fn=None, resolve_fn=None, fetch_fn=None):
         for domain, alert in alert_payloads.items():
             dispatch_results[domain] = dispatch(alert, channels)
 
-    return report, risks, errors, secret_findings, dispatch_results
+    history_entry = {
+        "captured_at": snapshot["captured_at"],
+        "assets": sum(len(r) for r in current.values()),
+        "dangling": sum(1 for r in current.values() for x in r.values() if x is None),
+        "takeovers": sum(
+            1 for r in risks.values()
+            for x in r.values() if x and x.get("risk") == "takeover"),
+        "secrets": sum(len(f) for f in secret_findings.values()),
+        "buckets": sum(len(b) for b in bucket_findings.values()),
+    }
+    if watchlist.get("history"):
+        append_history(watchlist["history"], history_entry)
+
+    return report, risks, errors, secret_findings, bucket_findings, dispatch_results
 
 
 def main(argv=None):
@@ -73,12 +96,21 @@ def main(argv=None):
                         help="JSON file with a 'domains' list")
     parser.add_argument("--state", default="perimeter-state.json",
                         help="state file for diffing between runs")
+    parser.add_argument("--trends", metavar="MD_OUT",
+                        help="render the historical trend report and exit (requires a watchlist 'history')")
     args = parser.parse_args(argv)
 
     with open(args.watchlist, encoding="utf-8") as fh:
         watchlist = json.load(fh)
 
-    report, risks, errors, secret_findings, dispatch_results = run(watchlist, args.state)
+    if args.trends:
+        from .trends import load_history, summarize, render_markdown
+        history_path = watchlist.get("history", "history.jsonl")
+        summary = summarize(load_history(history_path))
+        Path(args.trends).write_text(render_markdown(summary), encoding="utf-8")
+        return 0
+
+    report, risks, errors, secret_findings, bucket_findings, dispatch_results = run(watchlist, args.state)
 
     for domain, changes in report.items():
         print(f"\n== {domain} — {changes['total']} known subdomains ==")
@@ -107,10 +139,13 @@ def main(argv=None):
                   file=sys.stderr)
 
     exposure_found = any(any(v) for per_base in secret_findings.values() for v in per_base.values())
+    bucket_found = any(any(v) for v in bucket_findings.values())
     if takeover_found:
         return 2
     if exposure_found:
         return 3
+    if bucket_found:
+        return 4
     return 1 if errors else 0
 
 

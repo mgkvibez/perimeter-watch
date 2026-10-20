@@ -9,7 +9,7 @@ import urllib.request
 from email.message import EmailMessage
 
 
-def build_alert(watchlist_name, findings, risks, changes):
+def build_alert(watchlist_name, findings, risks, changes, buckets=None):
     """One alert payload describing this run's notable events."""
     body = {
         "watch": watchlist_name,
@@ -18,6 +18,7 @@ def build_alert(watchlist_name, findings, risks, changes):
         "removed": changes.get("removed", []),
         "takeover_risks": risks,
         "secret_exposures": findings,
+        "bucket_exposures": buckets or [],
     }
     return body
 
