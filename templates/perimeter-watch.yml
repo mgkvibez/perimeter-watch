@@ -1,0 +1,43 @@
+# Perimeter Watch — GitHub Actions template
+#
+# The free tier IS the product: schedule this in any repo and GitHub runs
+# your domain perimeter monitoring for free.
+#
+# Setup:
+#   1. Add a `watchlist.json` at repo root:
+#      { "domains": ["yourdomain.com", "anotherdomain.ng"] }
+#   2. Commit this file as .github/workflows/perimeter-watch.yml
+#   3. State persists in perimeter-state.json — commit it so runs diff.
+
+name: perimeter-watch
+
+on:
+  schedule:
+    - cron: "17 6 * * *" # daily at 06:17 UTC
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run perimeter watch
+        run: |
+          pip install --force-reinstall git+https://github.com/mgkvibez/perimeter-watch.git
+          python -m perimeter_watch --watchlist watchlist.json
+          # exit code 2 = takeover risk, fails the run and emails you
+
+      - name: Commit state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add perimeter-state.json
+          git diff --cached --quiet || (git commit -m "perimeter-watch: state update" && git push)

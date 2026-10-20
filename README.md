@@ -2,7 +2,7 @@
 
 > Watch your perimeter while you sleep.
 
-**Status: early development.** This repo is public research + planning until the first release.
+**Status: v0.1.0 — subdomain diffing + dangling CNAME takeover detection shipping.** This repo is public research + planning until the first release.
 
 Continuous external exposure monitoring for security teams and bug bounty hunters:
 
@@ -18,6 +18,21 @@ perimeter alerts without paying for an attack-surface platform.
 ## Usage (planned)
 
     uvx perimeter-watch scan --config perimeter.yaml
+
+## Quickstart
+
+    python -m perimeter_watch --watchlist watchlist.json --state perimeter-state.json
+
+First run: baselines every CT-log subdomain. Second run on: diffs added /
+removed / changed records, flags names that stopped resolving, and exits 2 on
+a takeover signature (dangling CNAME to a known-vulnerable service).
+
+The GitHub Actions template in `templates/perimeter-watch.yml` makes the
+free tier the product: one workflow file = free daily monitoring.
+
+11 offline tests (enumeration and resolution are injected, no network):
+
+    python -m unittest discover -s tests
 
 ## Documentation
 
