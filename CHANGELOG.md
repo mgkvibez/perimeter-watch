@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.2.0 — 2026-10-20
+
+- Secret exposure scanning on scoped assets: sensitive public files
+  (/.git/HEAD, /.env, ...) plus secret-shaped patterns in page bodies
+  (AWS keys, private key blocks, Google/Slack tokens, JWTs, MongoDB URIs)
+- Alert channels: webhook and email, injectable for tests
+- Alert payloads only fire on notable events (dangling, takeover,
+  exposure, added/removed subdomains)
+- CLI exit codes: 2 = takeover risk, 3 = secret exposure
+- 8 new tests (19 total)
+
+
 ## v0.1.0 — 2026-10-20
 
 - Subdomain enumeration via certificate transparency (crt.sh)

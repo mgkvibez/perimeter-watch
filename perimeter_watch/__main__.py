@@ -10,10 +10,13 @@ from .state import load_state, save_state, diff
 from .takeover import classify_all
 
 
-def run(watchlist, state_path, enum_fn=None, resolve_fn=None, quiet=False):
+def run(watchlist, state_path, enum_fn=None, resolve_fn=None, fetch_fn=None):
     """One monitoring run. Returns (report, risks) and persists state."""
     enum_fn = enum_fn or ct_subdomains
     resolve_fn = resolve_fn or (lambda names: resolve_all(names))
+
+    from .secrets import scan_all
+    from .alerts import build_alert, should_alert, dispatch
 
     previous = load_state(state_path)
     current = {}
@@ -32,12 +35,35 @@ def run(watchlist, state_path, enum_fn=None, resolve_fn=None, quiet=False):
     risks = {d: classify_all({n: r for n, r in records.items()})
              for d, records in current.items()}
 
+    secret_findings = {}
+    for domain, records in current.items():
+        live_bases = sorted({
+            f"https://{n}" for n, r in records.items() if r is not None
+        })
+        secret_findings[domain] = scan_all(live_bases, fetch_fn=fetch_fn) if live_bases else {}
+
+    alert_payloads = {}
+    for domain in current:
+        alert = build_alert(domain,
+                            findings=secret_findings.get(domain, {}),
+                            risks=risks.get(domain, {}),
+                            changes=report.get(domain, {}))
+        if should_alert(alert):
+            alert_payloads[domain] = alert
+
     snapshot = {
         "captured_at": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "domains": current,
     }
     save_state(snapshot, state_path)
-    return report, risks, errors
+
+    channels = watchlist.get("alerts", {})
+    dispatch_results = {}
+    if alert_payloads and channels:
+        for domain, alert in alert_payloads.items():
+            dispatch_results[domain] = dispatch(alert, channels)
+
+    return report, risks, errors, secret_findings, dispatch_results
 
 
 def main(argv=None):
@@ -52,7 +78,7 @@ def main(argv=None):
     with open(args.watchlist, encoding="utf-8") as fh:
         watchlist = json.load(fh)
 
-    report, risks, errors = run(watchlist, args.state)
+    report, risks, errors, secret_findings, dispatch_results = run(watchlist, args.state)
 
     for domain, changes in report.items():
         print(f"\n== {domain} — {changes['total']} known subdomains ==")
@@ -67,6 +93,12 @@ def main(argv=None):
     for domain, err in errors.items():
         print(f"\n!! {domain}: {err}", file=sys.stderr)
 
+    for domain, per_base in secret_findings.items():
+        for base, findings in per_base.items():
+            for f in findings:
+                print(f"SECRET EXPOSURE: {domain} :: {f['url']} — {f['evidence']}",
+                      file=sys.stderr)
+
     takeover_found = False
     for domain, domain_risks in risks.items():
         for name, risk in domain_risks.items():
@@ -74,7 +106,12 @@ def main(argv=None):
             print(f"\nTAKEOVER RISK: {domain} :: {name} — {risk['evidence']}",
                   file=sys.stderr)
 
-    return 2 if takeover_found else (1 if errors else 0)
+    exposure_found = any(any(v) for per_base in secret_findings.values() for v in per_base.values())
+    if takeover_found:
+        return 2
+    if exposure_found:
+        return 3
+    return 1 if errors else 0
 
 
 if __name__ == "__main__":

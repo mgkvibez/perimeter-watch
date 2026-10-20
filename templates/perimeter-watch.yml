@@ -33,7 +33,8 @@ jobs:
         run: |
           pip install --force-reinstall git+https://github.com/mgkvibez/perimeter-watch.git
           python -m perimeter_watch --watchlist watchlist.json
-          # exit code 2 = takeover risk, fails the run and emails you
+          # exit 2 = takeover risk, exit 3 = secret exposure;
+          # both fail the run and GitHub emails you
 
       - name: Commit state
         run: |

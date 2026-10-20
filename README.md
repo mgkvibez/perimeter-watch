@@ -2,7 +2,7 @@
 
 > Watch your perimeter while you sleep.
 
-**Status: v0.1.0 — subdomain diffing + dangling CNAME takeover detection shipping.** Secret scanning and alert channels are next on the roadmap.
+**Status: v0.1.0 — subdomain diffing + dangling CNAME takeover detection, secret exposure scanning and webhook/email alerts.**
 
 Continuous external exposure monitoring for security teams and bug bounty hunters:
 
@@ -25,12 +25,17 @@ perimeter alerts without paying for an attack-surface platform.
 
 First run: baselines every CT-log subdomain. Second run on: diffs added /
 removed / changed records, flags names that stopped resolving, and exits 2 on
-a takeover signature (dangling CNAME to a known-vulnerable service).
+a takeover signature (dangling CNAME to a known-vulnerable service), 3 on secret exposure.
+
+Secret scan + alerts need the optional "alerts" block in watchlist.json:
+
+    { "domains": ["yourdomain.com"],
+      "alerts": { "webhook": {"url": "https://hook.example/x"} } }
 
 The GitHub Actions template in `templates/perimeter-watch.yml` makes the
 free tier the product: one workflow file = free daily monitoring.
 
-11 offline tests (enumeration and resolution are injected, no network):
+19 offline tests (enumeration and resolution are injected, no network):
 
     python -m unittest discover -s tests
 
