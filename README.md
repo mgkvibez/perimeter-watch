@@ -2,7 +2,7 @@
 
 > Watch your perimeter while you sleep.
 
-**Status: v0.1.0 — subdomain diffing + dangling CNAME takeover detection shipping.** This repo is public research + planning until the first release.
+**Status: v0.1.0 — subdomain diffing + dangling CNAME takeover detection shipping.** Secret scanning and alert channels are next on the roadmap.
 
 Continuous external exposure monitoring for security teams and bug bounty hunters:
 
