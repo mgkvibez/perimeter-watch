@@ -55,4 +55,6 @@ free tier the product: one workflow file = free daily monitoring.
 
 ## License
 
-MIT
+PolyForm Noncommercial 1.0.0 — personal, educational and
+noncommercial use only; commercial use, distribution or shipping
+in marketed products is not permitted. See [LICENSE](LICENSE).
