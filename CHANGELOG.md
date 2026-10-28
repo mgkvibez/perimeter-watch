@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.4.0 — 2026-10-28
+
+- Multi-domain scan scheduling: per-domain `interval_days` (strings still
+  use the default), persisted last-scanned stamps, `--due` explains what
+  needs scanning and why, `--scan-due` runs only due domains
+- Delta alert digests: `--digest` batches a run's alerts into one summary
+  dispatch (channel-aware subject lines) instead of one message per
+  event; `--digest-threshold N` tunes when batching kicks in
+- Secrets/bucket scans are fetch-injected end to end — the full suite
+  is offline (41 tests, ~1s)
+## v0.3.0 — 2026-10-20
+
+- Exposed cloud-storage detection: S3, Azure Blob and GCS targets
+  derived from your own assets, probed with read-only anonymous
+  listing requests; exposures alert and exit with code 4.
+- Historical trend reports: every run appends to history.jsonl
+  (opt in via watchlist "history"); --trends renders asset growth,
+  incident counts and per-week deltas as markdown.
+- 8 new tests (27 total).
+
 ## v0.2.0 — 2026-10-20
 
 - Secret exposure scanning on scoped assets: sensitive public files
@@ -23,13 +43,3 @@
 - CLI with CI-friendly exit codes (2 = takeover risk)
 - GitHub Actions workflow template — the free tier is the product
 - 11 offline tests; enumeration and resolution fully injectable
-
-## v0.3.0 — 2026-10-20
-
-- Exposed cloud-storage detection: S3, Azure Blob and GCS targets
-  derived from your own assets, probed with read-only anonymous
-  listing requests; exposures alert and exit with code 4.
-- Historical trend reports: every run appends to history.jsonl
-  (opt in via watchlist "history"); --trends renders asset growth,
-  incident counts and per-week deltas as markdown.
-- 8 new tests (27 total).

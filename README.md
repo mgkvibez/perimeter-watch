@@ -19,6 +19,18 @@ perimeter alerts without paying for an attack-surface platform.
 
     uvx perimeter-watch scan --config perimeter.yaml
 
+## Scan scheduling and alert digests
+
+v0.4 adds per-domain cadence. Domains take an optional interval:
+
+    { "domains": [{"domain": "prod.yourdomain.com", "interval_days": 1},
+                  {"domain": "staging.yourdomain.com", "interval_days": 14}] }
+
+`--due` lists which domains are due and why (never scanned / interval
+elapsed); `--scan-due` runs only those. With `"alerts"` configured,
+`--digest` batches alerts per run into one summary dispatch instead of
+one webhook per event (threshold configurable via `--digest-threshold N`).
+
 ## Trend reports
 
 Add `"history": "history.jsonl"` to your watchlist and every run journals
@@ -44,7 +56,7 @@ Secret scan + alerts need the optional "alerts" block in watchlist.json:
 The GitHub Actions template in `templates/perimeter-watch.yml` makes the
 free tier the product: one workflow file = free daily monitoring.
 
-19 offline tests (enumeration and resolution are injected, no network):
+41 offline tests (enumeration, resolution and fetch are injected, no network):
 
     python -m unittest discover -s tests
 
