@@ -8,10 +8,34 @@ def load_state(path):
     path = Path(path)
     if not path.exists():
         return {}
-    state = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
     if "captured_at" in state and isinstance(state.get("domains"), dict):
         return state["domains"]
     return state
+
+
+def load_last_scanned(path):
+    """Load per-domain last_scanned timestamps from the state envelope."""
+    path = Path(path)
+    if not path.exists():
+        return {}
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    last_scanned = state.get("last_scanned")
+    if isinstance(last_scanned, dict) and last_scanned:
+        return dict(last_scanned)
+
+    captured_at = state.get("captured_at")
+    domains = state.get("domains")
+    if captured_at and isinstance(domains, dict):
+        return {d: captured_at for d in domains}
+    return {}
 
 
 def save_state(state, path):
