@@ -15,6 +15,13 @@ Continuous external exposure monitoring for security teams and bug bounty hunter
 The free tier of GitHub Actions IS the product: point it at a config and get
 perimeter alerts without paying for an attack-surface platform.
 
+
+<div align="center">
+  <img src="docs/demo/monitor-terminal.svg" alt="perimeter-watch due listing and digest run" width="100%">
+</div>
+
+_Per-domain scheduling and one alert digest instead of one message per event._
+
 ## Usage (planned)
 
     uvx perimeter-watch scan --config perimeter.yaml
