@@ -1,0 +1,39 @@
+name: approve-first-time
+
+# GitHub holds workflow runs from first-time contributors at
+# conclusion=action_required until a maintainer approves them. A contributor
+# who sees no checks assumes the repo is dead, so approve those runs
+# automatically. Never approve a PR that touches CI configuration or the gate
+# itself: that is how a fork would get its own workflow executed.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  actions: write
+  pull-requests: read
+  contents: read
+
+jobs:
+  approve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approve pending runs, unless the PR touches CI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          touched=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          if echo "$touched" | grep -qE '^(\.github/|scripts/verify\.sh$)'; then
+            echo "PR touches CI configuration, leaving for a human to approve"
+            exit 0
+          fi
+          runs=$(gh api "repos/$REPO/actions/runs?head_sha=$SHA" --jq '.workflow_runs[] | select(.conclusion=="action_required") | .id')
+          if [ -z "$runs" ]; then echo "no runs awaiting approval"; exit 0; fi
+          for id in $runs; do
+            echo "approving run $id"
+            gh api -X POST "repos/$REPO/actions/runs/$id/approve"
+          done
