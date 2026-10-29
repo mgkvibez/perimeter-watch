@@ -22,5 +22,5 @@ printf '{"domains": []}' > "$policy"
 python3 -m perimeter_watch --watchlist "$policy" > "$out" 2>&1 || { cat "$out"; rm -f "$policy"; fail "cli exit"; }
 rm -f "$policy"
 grep -qi "no issues found by ruleset" "$out" || { cat "$out"; fail "cli output: expected the ruleset label"; }
-echo "smoke ok: $(grep -mi1 'no issues found by ruleset' "$out")"
+echo "smoke ok: $(grep -m1 -i "no issues found by ruleset" "$out")"
 echo "ALL CHECKS PASSED"
